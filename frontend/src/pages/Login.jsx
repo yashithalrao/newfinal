@@ -1,5 +1,8 @@
+
+
+
 import { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom'; // 👈 added Link
 import api from '../api/axios';
 import { AuthContext } from '../context/authContext';
 
@@ -20,35 +23,42 @@ function Login() {
     }
   };
 
-return (
-  <div style={pageStyle}>
-    <form onSubmit={handleSubmit} style={formStyle}>
-      <h1 style = {brandText}>SANSERA</h1>
-      <h2 style={titleStyle}>Login</h2>
+  return (
+    <div style={pageStyle}>
+      <form onSubmit={handleSubmit} style={formStyle}>
+        <h1 style={brandText}>SANSERA</h1>
+        <h2 style={titleStyle}>Login</h2>
 
-      <input
-        type="email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-        placeholder="Email"
-        style={inputStyle}
-        required
-      />
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="Email"
+          style={inputStyle}
+          required
+        />
 
-      <input
-        type="password"
-        value={password}
-        onChange={e => setPassword(e.target.value)}
-        placeholder="Password"
-        style={inputStyle}
-        required
-      />
+        <input
+          type="password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          placeholder="Password"
+          style={inputStyle}
+          required
+        />
 
-      <button type="submit" style={buttonStyle}>Login</button>
-    </form>
-  </div>
-);
+        <button type="submit" style={buttonStyle}>Login</button>
 
+        {/* 👇 Signup link */}
+        <p style={{ marginTop: '20px', textAlign: 'center', fontSize: '0.9rem' }}>
+          Don’t have an account?{' '}
+          <Link to="/signup" style={{ color: 'rgba(212, 149, 227, 1)', textDecoration: 'underline' }}>
+            Sign up
+          </Link>
+        </p>
+      </form>
+    </div>
+  );
 }
 
 export default Login;
