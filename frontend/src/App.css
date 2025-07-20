@@ -1,0 +1,12 @@
+th, td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #333;
+  text-align: left;
+}
+thead {
+  background: #292929;
+  color: #e793cc;
+}
+tr:nth-child(even) {
+  background: #181818;
+}
