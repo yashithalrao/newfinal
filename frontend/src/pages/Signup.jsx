@@ -13,7 +13,7 @@ function Signup() {
     try {
       await api.post('/auth/signup', { email, password, role });
       alert('Account created!');
-      navigate('/login');
+      navigate('/');
     } catch (err) {
       alert(err.response?.data?.message || 'Signup failed');
     }
@@ -55,7 +55,7 @@ function Signup() {
 
         <div style={loginPrompt}>
           Already have an account?
-          <Link to="/login" style={loginLink}> Login</Link>
+          <Link to="/" style={loginLink}> Login</Link>
         </div>
       </form>
     </div>
