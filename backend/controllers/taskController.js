@@ -1,3 +1,5 @@
+
+
 const Task = require('../models/Task');
 
 exports.createTask = async (req, res) => {
@@ -13,7 +15,7 @@ exports.createTask = async (req, res) => {
   const start = new Date(body.start);
   const actualCompletedDate = new Date();
   const daysTaken = Math.ceil((actualCompletedDate - start) / (1000 * 60 * 60 * 24));
-  const actualHrs = parseFloat((daysTaken * 7.75).toFixed(2));
+  const actualHrs = parseFloat((daysTaken * 8).toFixed(2));
 
   taskData.actualCompletedDate = actualCompletedDate;
   taskData.daysTaken = daysTaken;
@@ -70,45 +72,6 @@ exports.getAllTasks = async (req, res) => {
   }
 };
 
-// exports.updateTask = async (req, res) => {
-//   try {
-//     const task = await Task.findById(req.params.id);
-//     if (!task) return res.status(404).json({ message: 'Task not found' });
-
-//     if (  task.createdBy.toString() !== req.user.id &&
-//   task.personHandling !== req.user.email &&
-//   req.user.role !== 'admin') {
-//       return res.status(403).json({ message: 'Unauthorized' });
-//     }
-
-//     const updates = { ...req.body };
-
-// // Prevent end date from being overwritten unintentionally
-// if (!req.body.explicitlyEditingEndDate) {
-//   delete updates.end;
-// }
-
-
-//     // Recalculate only if task is being marked as completed
-// if (updates.status === 'Completed') {
-//   const start = new Date(updates.start || task.start);
-//   const actualCompletedDate = new Date();
-//   const daysTaken = Math.ceil((actualCompletedDate - start) / (1000 * 60 * 60 * 24));
-//   const actualHrs = parseFloat((daysTaken * 7.75).toFixed(2));
-
-//   updates.actualCompletedDate = actualCompletedDate;
-//   updates.daysTaken = daysTaken;
-//   updates.actualHrs = actualHrs;
-// }
-
-
-//     const updatedTask = await Task.findByIdAndUpdate(req.params.id, updates, { new: true });
-//     res.json(updatedTask);
-//   } catch (err) {
-//     res.status(500).json({ message: 'Error updating task', error: err.message });
-//   }
-// };
-
 
 exports.updateTask = async (req, res) => {
   try {
@@ -147,20 +110,28 @@ await task.save();
     }
 
     // Set actualStartDate if task moves from Pending → Ongoing
-    if (
-      task.status === 'Pending' &&
-      updates.status === 'Ongoing' &&
-      !task.actualStartDate
-    ) {
-      updates.actualStartDate = new Date();
-    }
+    // if (
+    //   task.status === 'Pending' &&
+    //   updates.status === 'Ongoing' &&
+    //   !task.actualStartDate
+    // ) {
+    //   updates.actualStartDate = new Date();
+    // }
+    if (updates.status === 'Ongoing' && !task.actualStartDate) {
+  updates.actualStartDate = new Date();
+}
+
+    Object.assign(task, req.body);
+
+    await task.save();
 
     // Recalculate only if task is being marked as completed
     if (updates.status === 'Completed') {
       const start = new Date(updates.start || task.start);
       const actualCompletedDate = new Date();
+      const actualStart = updates.actualStart; 
       const daysTaken = Math.ceil(
-        (actualCompletedDate - start) / (1000 * 60 * 60 * 24)
+        (actualCompletedDate - actualStart) / (1000 * 60 * 60 * 24)
       );
       const actualHrs = parseFloat((daysTaken * 7.75).toFixed(2));
 
@@ -200,6 +171,21 @@ exports.deleteTask = async (req, res) => {
 };
 
 
+// DELETE ALL TASKS — ADMIN ONLY
+exports.deleteAllTasks = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Only admin can delete all tasks' });
+    }
+
+    await Task.deleteMany({});
+    res.json({ message: 'All tasks deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to delete all tasks', error: err.message });
+  }
+};
+
+
 
 // GET /api/tasks/summary
 exports.getDashboardStats = async (req, res) => {
@@ -225,7 +211,7 @@ exports.getDashboardStats = async (req, res) => {
       new Date(t.updatedAt) >= startOfWeek
     );
     const overdueTasks = tasks.filter(t =>
-      t.status !== 'Completed' &&
+      t.status !== 'Completed' && t.status !== 'Halt' &&
       new Date(t.end) < today
     );
 
@@ -298,5 +284,28 @@ exports.getPendingTaskStats = async (req, res) => {
     res.json(result);
   } catch (err) {
     res.status(500).json({ message: 'Error getting pending stats', error: err.message });
+  }
+};
+
+// GET /api/tasks/filter?year=2024&startDate=2025-07-01&endDate=2025-07-31
+exports.filterTasks = async (req, res) => {
+  try {
+    const { year, startDate, endDate } = req.query;
+    const query = {};
+
+    if (year) {
+      const start = new Date(`${year}-01-01`);
+      const end = new Date(`${+year + 1}-01-01`);
+      query.start = { $gte: start, $lt: end };
+    }
+
+    if (startDate && endDate) {
+      query.start = { $gte: new Date(startDate), $lte: new Date(endDate) };
+    }
+
+    const tasks = await Task.find(query).populate('createdBy', 'email');
+    res.json(tasks);
+  } catch (err) {
+    res.status(500).json({ message: 'Filtering failed', error: err.message });
   }
 };

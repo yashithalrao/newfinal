@@ -1,4 +1,6 @@
 
+
+
 const express = require('express');
 const router = express.Router();
 const taskController = require('../controllers/taskController');
@@ -29,5 +31,9 @@ router.get('/summary', authenticate, taskController.getDashboardStats);
 router.get('/pending-stats', authenticate, authorizeRoles('admin'), taskController.getPendingTaskStats);
 
 
-module.exports = router;
+router.get('/filter', authenticate, taskController.filterTasks);
 
+router.delete('/', authenticate, authorizeRoles('admin'), taskController.deleteAllTasks);
+
+
+module.exports = router;

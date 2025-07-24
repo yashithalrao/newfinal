@@ -1,4 +1,3 @@
-
 import React from 'react';
 import axios from '../api/axios';
 import { useAuth } from '../context/authContext'; 
@@ -18,7 +17,8 @@ export default function TaskList({ tasks, onDelete, onEdit }) {
   return (
     <div style={containerStyle}>
       {tasks.map((t) => (
-        <div key={t._id} style={cardStyle}>
+        <div key={t._id} style={{  ...cardStyle,
+  ...(t.status === 'Halt' && haltedCardStyle)}}>
           <div style={grid}>
             <span><b>Sl. No:</b> {t.slNo}</span>
             <span><b>Project ID:</b> {t.projectId}</span>
@@ -112,4 +112,11 @@ const deleteButton = {
   borderRadius: '6px',
   cursor: 'pointer',
   boxShadow: '0 0 6px rgba(220, 53, 69, 0.2)'
+};
+
+const haltedCardStyle = {
+  backgroundColor: '#f0f0f0',
+  color: '#777',
+  border: '1px solid #ccc',
+  opacity: 0.8
 };

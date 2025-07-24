@@ -18,7 +18,7 @@ const TaskSchema = new mongoose.Schema({
   plannedHrs: { type: Number, required: true },
   actualHrs: { type: Number, default: 0 }, // calculated field
   daysTaken: { type: Number, default: 0 }, // calculated field
-  status: { type: String, enum: ['Pending', 'Ongoing', 'Completed'], required: true },
+  status: { type: String, enum: ['Pending', 'Ongoing', 'Completed', 'Halt'], required: true },
   remarks: { type: String },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });

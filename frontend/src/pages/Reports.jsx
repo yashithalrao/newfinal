@@ -15,6 +15,11 @@ export default function Report() {
   const [pendingStats, setPendingStats] = useState([]);
 const [viewFreeTime, setViewFreeTime] = useState(false);
 
+const [startDateFilter, setStartDateFilter] = useState('');
+const [endDateFilter, setEndDateFilter] = useState('');
+const [yearFilter, setYearFilter] = useState('');
+
+
 const fetchPendingStats = async () => {
   try {
     const res = await axios.get('/tasks/pending-stats');
@@ -50,54 +55,110 @@ useEffect(() => {
     }
   };
 
-  // const exportCSV = () => {
-  //   const headers = [
-  //     'SL No', 'Project ID', 'Fixture No', 'Person Email',
-  //     'Start Date', 'End Date', 'Planned Hrs', 'Actual Hrs',
-  //     'Variance', 'Status'
-  //   ];
-  //   const rows = tasks.map(t => [
-  //     t.slNo, t.projectId, t.fixtureNumber,
-  //     t.createdBy?.email || 'Unknown',
-  //     new Date(t.start).toLocaleDateString(),
-  //     new Date(t.end).toLocaleDateString(),
-  //     t.plannedHrs,
-  //     t.actualHrs,
-  //     (t.actualHrs - t.plannedHrs).toFixed(2),
-  //     t.status
-  //   ]);
-  //   const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
-  //   const blob = new Blob([csvContent], { type: 'text/csv' });
-  //   const url = URL.createObjectURL(blob);
-  //   const a = document.createElement('a');
-  //   a.href = url;
-  //   a.download = 'task_report.csv';
-  //   a.click();
-  // };
 
   const COLORS = ['#3ba4b7ff', '#e4da17ff', '#1ac76eff'];
 
-  const statusData = [
-    { name: 'Pending', value: tasks.filter(t => t.status === 'Pending').length },
-    { name: 'Ongoing', value: tasks.filter(t => t.status === 'Ongoing').length },
-    { name: 'Completed', value: tasks.filter(t => t.status === 'Completed').length }
-  ];
 
-  const barData = tasks.map(t => ({
-    name: `#${t.slNo}`,
-    planned: t.plannedHrs,
-    actual: t.actualHrs
-  }));
+  // const statusData = [
+  //   { name: 'Pending', value: tasks.filter(t => t.status === 'Pending').length },
+  //   { name: 'Ongoing', value: tasks.filter(t => t.status === 'Ongoing').length },
+  //   { name: 'Completed', value: tasks.filter(t => t.status === 'Completed').length }
+  // ];
+
+  const filteredTasks = tasks.filter((t) => {
+  const taskStart = new Date(t.start);
+
+  const matchesDateRange = (!startDateFilter || taskStart >= new Date(startDateFilter)) &&
+                           (!endDateFilter || taskStart <= new Date(endDateFilter));
+
+  const matchesYear = !yearFilter || taskStart.getFullYear().toString() === yearFilter;
+
+  return matchesDateRange && matchesYear;
+});
+
+const statusData = [
+  { name: 'Pending', value: filteredTasks.filter(t => t.status === 'Pending').length },
+  { name: 'Ongoing', value: filteredTasks.filter(t => t.status === 'Ongoing').length },
+  { name: 'Completed', value: filteredTasks.filter(t => t.status === 'Completed').length }
+];
+
+const barData = filteredTasks.map(t => ({
+  name: `#${t.slNo}`,
+  planned: t.plannedHrs,
+  actual: t.actualHrs
+}));
+
+
+  // const barData = tasks.map(t => ({
+  //   name: `#${t.slNo}`,
+  //   planned: t.plannedHrs,
+  //   actual: t.actualHrs
+  // }));
 
   return (
+    
     <div style={pageStyle}>
       <h2 style={headerStyle}>📋 Admin Report</h2>
+      
 
       {/* <div style={{ marginBottom: '30px' }}>
         <button onClick={exportCSV} style={exportButtonStyle}>
           Export to CSV
         </button>
-      </div> */}
+      </div> */}<div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+  <div>
+    <label>Start Date: </label>
+    <input
+      type="date"
+      value={startDateFilter}
+      onChange={(e) => setStartDateFilter(e.target.value)}
+    />
+  </div>
+
+  <div>
+    <label>End Date: </label>
+    <input
+      type="date"
+      value={endDateFilter}
+      onChange={(e) => setEndDateFilter(e.target.value)}
+    />
+  </div>
+
+  <div>
+    <label>Year: </label>
+    <select
+      value={yearFilter}
+      onChange={(e) => setYearFilter(e.target.value)}
+    >
+      <option value="">All</option>
+      {Array.from(new Set(tasks.map(t => new Date(t.start).getFullYear())))
+        .sort((a, b) => b - a)
+        .map(y => <option key={y} value={y}>{y}</option>)}
+    </select>
+  </div>
+
+  <button
+    onClick={() => {
+      setStartDateFilter('');
+      setEndDateFilter('');
+      setYearFilter('');
+    }}
+    style={{
+      background: '#eee',
+      border: '1px solid #ccc',
+      borderRadius: '5px',
+      padding: '5px 10px',
+      cursor: 'pointer',
+      fontWeight: '500',
+      height: '35px',
+      marginTop: '20px',
+    }}
+  >
+    Reset Filters
+  </button>
+</div>
+
+      
 
       <div style={chartContainerStyle}>
         <div style={cardStyle}>

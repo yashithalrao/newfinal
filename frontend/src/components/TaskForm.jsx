@@ -23,7 +23,7 @@ const editableFields = Object.keys(initialTask);
 export default function TaskForm({ onTaskCreated, editTask, onTaskUpdated }) {
   const [task, setTask] = useState(initialTask);
   const [users, setUsers] = useState([]);
-  const { user } = useAuth(); // from context
+  const { user } = useAuth();
 
   useEffect(() => {
     if (editTask) {
@@ -40,8 +40,7 @@ export default function TaskForm({ onTaskCreated, editTask, onTaskUpdated }) {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        
-        const res = await api.get('/auth/users'); // ✅
+        const res = await api.get('/auth/users');
         setUsers(res.data);
       } catch (err) {
         console.error('Failed to fetch users for personHandling', err);
@@ -58,6 +57,7 @@ export default function TaskForm({ onTaskCreated, editTask, onTaskUpdated }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       const payload = {
         ...task,
@@ -67,6 +67,13 @@ export default function TaskForm({ onTaskCreated, editTask, onTaskUpdated }) {
         start: new Date(task.start),
         end: new Date(task.end)
       };
+
+    
+      // if ((name === 'start' || name === 'end') && task.status === 'Halt') return;
+
+  // Prevent start/end updates if status is Halt
+  if ((name === 'start' || name === 'end') && task.status === 'Halt') return;
+
 
       let res;
       if (editTask?._id) {
@@ -90,65 +97,91 @@ export default function TaskForm({ onTaskCreated, editTask, onTaskUpdated }) {
       </h3>
 
       <form onSubmit={handleSubmit}>
-        {editableFields.map((key) => (
-          <div key={key} style={{ marginBottom: '12px' }}>
-            {key === 'priority' ? (
-              <select name={key} value={task[key]} onChange={handleChange} style={select} required>
-                <option value="">Select Priority</option>
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-              </select>
-            ) : key === 'status' ? (
-              <select name={key} value={task[key]} onChange={handleChange} style={select} required>
-                <option value="">Select Status</option>
-                <option value="Pending">Pending</option>
-                <option value="Ongoing">Ongoing</option>
-                <option value="Completed">Completed</option>
-              </select>
-            ) : key === 'personHandling' ? (
-  user?.role === 'admin' ? (
-    <select name="personHandling" value={task.personHandling} onChange={handleChange} style={select} required>
-      <option value="">Assign to</option>
-      {users.map(u => (
-        <option key={u._id} value={u.email}>
-          {u.email}
-        </option>
-      ))}
-    </select>
-  ) : (
-    <input
-      type="text"
-      name="personHandling"
-      value={user?.email}
-      readOnly
-      style={input}
-    />
-  )
-             ) : ['start', 'end'].includes(key) ? (
-              <input
-                type="date"
-                name={key}
-                value={task[key]?.slice(0, 10)}
-                onChange={handleChange}
-                style={input}
-                required
-              />
-            ) :
+        {editableFields.map((key) => {
+          const isHalted = task.status === 'Halt';
 
-              (
-              <input
-                type={['slNo', 'plannedHrs'].includes(key) ? 'number' : 'text'}
-                name={key}
-                value={task[key]}
-                onChange={handleChange}
-                placeholder={key}
-                style={input}
-                required={key !== 'remarks'}
-              />
-            )}
+          return (
+            <div key={key} style={{ marginBottom: '12px' }}>
+              {key === 'priority' ? (
+                <select name={key} value={task[key]} onChange={handleChange} style={select} required>
+                  <option value="">Select Priority</option>
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                </select>
+              ) : key === 'status' ? (
+                <select name={key} value={task[key]} onChange={handleChange} style={select} required>
+                  <option value="">Select Status</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Ongoing">Ongoing</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Halt">Halt</option>
+                </select>
+              ) : key === 'personHandling' ? (
+                user?.role === 'admin' ? (
+                  <select name="personHandling" value={task.personHandling} onChange={handleChange} style={select} required>
+                    <option value="">Assign to</option>
+                    {users.map(u => (
+                      <option key={u._id} value={u.email}>
+                        {u.email}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    name="personHandling"
+                    value={user?.email}
+                    readOnly
+                    style={input}
+                  />
+                )
+              ) : ['start', 'end'].includes(key) ? (
+                <input
+                  type="date"
+                  name={key}
+                  // value={task[key]?.slice(0, 10)}
+                  value={task[key] ? task[key].slice(0, 10) : ''}
+
+                  onChange={handleChange}
+                  style={{
+    ...input,
+    backgroundColor: isHalted ? '#e0e0e0' : '#f7fbff',
+    color: isHalted ? '#888' : '#0a1d37',
+    cursor: isHalted ? 'not-allowed' : 'text'
+  }}
+                  required
+                  disabled={isHalted}
+              
+                />
+              ) : key === 'remarks' ? null : (
+                <input
+                  type={['slNo', 'plannedHrs'].includes(key) ? 'number' : 'text'}
+                  name={key}
+                  value={task[key]}
+                  onChange={handleChange}
+                  placeholder={key}
+                  style={input}
+                  required
+                />
+              )}
+            </div>
+          );
+        })}
+
+        {task.status === 'Halt' && (
+          <div style={{ marginBottom: '12px' }}>
+            <input
+              type="text"
+              name="remarks"
+              value={task.remarks}
+              onChange={handleChange}
+              placeholder="Enter reason for halt"
+              style={input}
+              required
+            />
           </div>
-        ))}
+        )}
 
         <button type="submit" style={button}>
           {editTask ? "Update Task" : "Add Task"}
@@ -156,7 +189,7 @@ export default function TaskForm({ onTaskCreated, editTask, onTaskUpdated }) {
       </form>
 
       {editTask?.status === 'Completed' && (
-        <div style={{ marginTop: '20px', color: '#fff' }}>
+        <div style={{ marginTop: '20px', color: '#000' }}>
           <p><strong>📅 Actual Completed Date:</strong> {new Date(editTask.actualCompletedDate).toLocaleDateString()}</p>
           <p><strong>🕒 Actual Hours:</strong> {editTask.actualHrs}</p>
           <p><strong>📆 Days Taken:</strong> {editTask.daysTaken}</p>
@@ -166,7 +199,6 @@ export default function TaskForm({ onTaskCreated, editTask, onTaskUpdated }) {
   );
 }
 
-// --- Styles ---
 // --- Styles ---
 const card = {
   backgroundColor: '#ffffff',
