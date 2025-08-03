@@ -20,6 +20,7 @@ const TaskSchema = new mongoose.Schema({
   daysTaken: { type: Number, default: 0 }, // calculated field
   status: { type: String, enum: ['Pending', 'Ongoing', 'Completed', 'Halt'], required: true },
   remarks: { type: String },
+  hoursPerDay: { type: Number, default: 0 },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });
 module.exports = mongoose.model('Task', TaskSchema);
